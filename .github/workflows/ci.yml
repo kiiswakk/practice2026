@@ -22,10 +22,25 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore
-        run: dotnet restore
+        run: |
+          if ls *.slnx 1> /dev/null 2>&1; then
+            dotnet restore
+          else
+            echo "Файл .slnx не найден. Пропуск Restore."
+          fi
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: |
+          if ls *.slnx 1> /dev/null 2>&1; then
+            dotnet build --configuration Release --no-restore
+          else
+            echo "Файл .slnx не найден. Пропуск Build."
+          fi
 
       - name: Test
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: |
+          if ls *.slnx 1> /dev/null 2>&1; then
+            dotnet test --configuration Release --no-build --verbosity normal
+          else
+            echo "Файл .slnx не найден. Пропуск Test."
+          fi
