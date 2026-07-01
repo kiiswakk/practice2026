@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using CommandLib;
 
 var dllPath = Path.Combine(
     AppDomain.CurrentDomain.BaseDirectory,
