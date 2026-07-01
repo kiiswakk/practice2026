@@ -1,4 +1,5 @@
 ﻿namespace task07;
+using System.Reflection;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property)]
 public class DisplayNameAttribute : Attribute
