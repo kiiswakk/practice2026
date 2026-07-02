@@ -2,7 +2,7 @@
 
 if (args.Length == 0)
 {
-    Console.WriteLine("Укажите путь к DLL.");
+    Console.WriteLine("Укажите путь к dll файлу");
     return;
 }
 
@@ -10,14 +10,13 @@ string dllPath = args[0];
 
 if (!File.Exists(dllPath))
 {
-    Console.WriteLine("Файл не найден.");
+    Console.WriteLine("Файл не найден!!!");
     return;
 }
 
 Assembly assembly = Assembly.LoadFrom(dllPath);
 
 Console.WriteLine($"Библиотека: {assembly.GetName().Name}");
-Console.WriteLine();
 
 foreach (Type type in assembly.GetTypes())
 {
@@ -26,33 +25,27 @@ foreach (Type type in assembly.GetTypes())
     Console.WriteLine("Атрибуты:");
     foreach (var attribute in type.GetCustomAttributes())
     {
-        Console.WriteLine($"  {attribute.GetType().Name}");
+        Console.WriteLine($"{attribute.GetType().Name}");
     }
 
     Console.WriteLine("Конструкторы:");
     foreach (ConstructorInfo constructor in type.GetConstructors())
     {
-        Console.WriteLine($" {constructor.Name}");
+        Console.WriteLine($"{constructor.Name}");
 
         foreach (ParameterInfo parameter in constructor.GetParameters())
         {
-            Console.WriteLine($" {parameter.ParameterType.Name} {parameter.Name}");
+            Console.WriteLine($"{parameter.ParameterType.Name} {parameter.Name}");
         }
     }
 
     Console.WriteLine("Методы:");
-    foreach (MethodInfo method in type.GetMethods(
-                 BindingFlags.Public |
-                 BindingFlags.Instance |
-                 BindingFlags.DeclaredOnly))
+    foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
     {
-        Console.WriteLine($" {method.Name}");
-
+        Console.WriteLine($"{method.Name}");
         foreach (ParameterInfo parameter in method.GetParameters())
         {
-            Console.WriteLine($" {parameter.ParameterType.Name} {parameter.Name}");
+            Console.WriteLine($"{parameter.ParameterType.Name} {parameter.Name}");
         }
     }
-
-    Console.WriteLine();
 }
