@@ -3,17 +3,23 @@ using System.Reflection;
 
 namespace PluginLoader;
 
-class Program
+public class Program
 {
     static List<Type> allPlugins = new();
     static List<Type> sortedPlugins = new();
+
+    static HashSet<string> visiting = new();
     static HashSet<string> visited = new();
+
     static void SortPlugins(Type type)
     {
         if (visited.Contains(type.Name))
             return;
 
-        visited.Add(type.Name);
+        if (visiting.Contains(type.Name))
+            throw new InvalidOperationException($"Обнаружена циклическая зависимость: {type.Name}");
+
+        visiting.Add(type.Name);
 
         var attribute = type.GetCustomAttribute<PluginLoadAttribute>();
 
@@ -28,36 +34,81 @@ class Program
                 }
             }
         }
+
+        visiting.Remove(type.Name);
+        visited.Add(type.Name);
         sortedPlugins.Add(type);
     }
+
+    public static List<Type> GetSortedPlugins(List<Type> plugins)
+    {
+        allPlugins = plugins;
+        sortedPlugins.Clear();
+        visiting.Clear();
+        visited.Clear();
+
+        foreach (var plugin in allPlugins)
+            SortPlugins(plugin);
+
+        return sortedPlugins;
+    }
+    
     static void Main()
     {
-        string dllPath = @"Plugins/bin/Debug/net10.0/Plugins.dll";
-        Assembly assembly = Assembly.LoadFrom(dllPath);
+        string solutionDir = Path.GetFullPath(
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
 
-        foreach (var type in assembly.GetTypes())
+        string pluginsDir = Path.Combine(solutionDir, "Plugins", "bin", "Debug", "net10.0");
+
+        string[] dllFiles = Directory.GetFiles(pluginsDir, "*.dll");
+        foreach (string dllPath in dllFiles)
         {
-            if (!type.IsClass)
-                continue;
+            try
+            {
+                Assembly assembly = Assembly.LoadFrom(dllPath);
 
-            if (!typeof(ICommand).IsAssignableFrom(type))
-                continue;
+                foreach (var type in assembly.GetTypes())
+                {
+                    if (!type.IsClass || type.IsAbstract)
+                        continue;
 
-            if (type.GetCustomAttribute<PluginLoadAttribute>() == null)
-                continue;
+                    if (!typeof(ICommand).IsAssignableFrom(type))
+                        continue;
 
-            allPlugins.Add(type);
+                    if (type.GetCustomAttribute<PluginLoadAttribute>() == null)
+                        continue;
+
+                    allPlugins.Add(type);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Не удалось загрузить {Path.GetFileName(dllPath)}: {ex.Message}");
+            }
         }
 
-        foreach (var type in allPlugins)
+        try
         {
-            SortPlugins(type);
-        }
+            foreach (var type in allPlugins)
+            {
+                SortPlugins(type);
+            }
 
-        foreach (var type in sortedPlugins)
-        {
-            ICommand command = (ICommand)Activator.CreateInstance(type)!;
-            command.Execute();
+            Console.WriteLine($"Найдено плагинов: {sortedPlugins.Count}\n");
+
+            foreach (var type in sortedPlugins)
+            {
+                if (Activator.CreateInstance(type) is ICommand command)
+                {
+                    command.Execute();
+                }
+            }
         }
-    }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Ошибка: {ex.Message}");
+            Console.ResetColor();
+        }   
+    }   
 }

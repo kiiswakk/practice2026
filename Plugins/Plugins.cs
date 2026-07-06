@@ -37,3 +37,15 @@ public class Inheritor1 : ICommand
         Console.WriteLine("Inheritor1");
     }
 }
+
+[PluginLoad("PluginB")]
+public class PluginA : ICommand
+{
+    public void Execute() { }
+}
+
+[PluginLoad("PluginA")]
+public class PluginB : ICommand
+{
+    public void Execute() { }
+}
