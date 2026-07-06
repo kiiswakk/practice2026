@@ -2,89 +2,135 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using task07; 
 
-if (args.Length == 0)
+namespace task09
 {
-    Console.WriteLine("Укажите путь к dll файлу");
-    return;
-}
-
-string dllPath = args[0];
-
-if (!File.Exists(dllPath))
-{
-    Console.WriteLine("Файл не найден!!!");
-    return;
-}
-
-try
-{
-    Assembly assembly = Assembly.LoadFrom(dllPath);
-    Console.WriteLine($"Библиотека: {assembly.GetName().Name}");
-    Console.WriteLine(new string('-', 40));
-    Type[] types;
-    try
-    {
-        types = assembly.GetTypes();
-    }
-    catch (ReflectionTypeLoadException ex)
-    {
-        Console.WriteLine("Не удалось загрузить некоторые типы из-за отсутствующих зависимостей.");
-        
-        Console.WriteLine("Ошибки загрузки:");
-        foreach (var loaderException in ex.LoaderExceptions)
+    class Program
+    {   
+        static void PrintParameters(ParameterInfo[] parameters)
         {
-            Console.WriteLine($" - {loaderException?.Message}");
-        }
-        Console.WriteLine(new string('-', 40));
-        types = ex.Types.OfType<Type>().ToArray();
-    }
-
-    foreach (Type type in types)
-    {
-        Console.WriteLine($"Класс: {type.FullName}");
-
-        // Атрибуты
-        var attributes = type.GetCustomAttributes().ToArray();
-        if (attributes.Length > 0)
-        {
-            Console.WriteLine("  Атрибуты:");
-            foreach (var attribute in attributes)
+            for (int i = 0; i < parameters.Length; i++)
             {
-                Console.WriteLine($"    [{attribute.GetType().Name}]");
+                Console.Write($"{parameters[i].ParameterType.Name} {parameters[i].Name}");
+                if (i < parameters.Length - 1) Console.Write(", ");
             }
         }
-        var constructors = type.GetConstructors();
-        if (constructors.Length > 0)
+
+        static void Main(string[] args)
         {
-            Console.WriteLine("  Конструкторы:");
-            foreach (ConstructorInfo constructor in constructors)
+            string dllPath;
+
+            if (args.Length > 0)
             {
-                var parameters = constructor.GetParameters()
-                    .Select(p => $"{p.ParameterType.Name} {p.Name}");
-                Console.WriteLine($"    ctor({string.Join(", ", parameters)})");
+                dllPath = args[0];
+            }
+            else
+            {
+                dllPath = Assembly.GetExecutingAssembly().Location;
+            }
+
+            if (!File.Exists(dllPath))
+            {
+                Console.WriteLine($"Ошибка. Файл не найден по пути: {dllPath}");
+                return;
+            }
+
+            try
+            {
+                Assembly assembly = Assembly.LoadFrom(dllPath);
+                Console.WriteLine($"Анализ сборки: {assembly.GetName().Name}");
+                Console.WriteLine(new string('-', 50));
+
+                Type[] types;
+                try
+                {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("[Предупреждение] Не удалось загрузить некоторые типы из-за отсутствия внешних зависимостей.");
+                    Console.WriteLine("Ошибки загрузчика:");
+                    foreach (var loaderEx in ex.LoaderExceptions)
+                    {
+                        if (loaderEx != null) Console.WriteLine($" - {loaderEx.Message}");
+                    }
+                    Console.WriteLine(new string('-', 50));
+
+                    types = ex.Types.OfType<Type>().ToArray();
+                }
+
+                foreach (Type type in types)
+                {
+                    if (!type.IsClass) continue;
+
+                    if (type.Name.StartsWith("<>")) continue;
+
+                    Console.WriteLine($"Класс: {type.FullName}");
+
+                    var classAttributes = type.GetCustomAttributes();
+                    foreach (var attr in classAttributes)
+                    {
+                        if (attr.GetType().Name.StartsWith("Nullable")) continue;
+
+                        if (attr is task07.DisplayNameAttribute dna)
+                        {
+                            Console.WriteLine($"  Атрибут: [DisplayName(\"{dna.DisplayName}\")]");
+                        }
+                        else if (attr is task07.VersionAttribute va)
+                        {
+                            Console.WriteLine($"  Атрибут: [Version({va.Major}, {va.Minor})]");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"  Атрибут: [{attr.GetType().Name}]");
+                        }
+                    }
+
+                    Console.WriteLine("  Конструкторы:");
+                    ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (var ctor in constructors)
+                    {
+                        string visibility = ctor.IsPublic ? "public" : "private/protected";
+                        Console.Write($"    - {visibility} {type.Name}(");
+                        PrintParameters(ctor.GetParameters());
+                        Console.WriteLine(")");
+                    }
+
+                    Console.WriteLine("  Методы:");
+                    MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
+                    foreach (var method in methods)
+                    {
+                        if (method.IsSpecialName) continue;
+
+                        string modifiers = method.IsPublic ? "public" : "private/internal";
+                        if (method.IsStatic) modifiers += " static";
+
+                        Console.Write($"    - {modifiers} {method.ReturnType.Name} {method.Name}(");
+                        PrintParameters(method.GetParameters());
+                        Console.WriteLine(")");
+
+                        var methodAttrs = method.GetCustomAttributes();
+                        foreach (var attr in methodAttrs)
+                        {
+                            if (attr is task07.DisplayNameAttribute dna)
+                            {
+                                Console.WriteLine($"      Атрибут метода: [DisplayName(\"{dna.DisplayName}\")]");
+                            }
+                        }
+                    }
+                    Console.WriteLine(new string('-', 50));
+                }
+            }
+            catch (BadImageFormatException)
+            {
+                Console.WriteLine("Ошибка: Указанный файл не является валидной .NET сборкой.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Непредвиденная ошибка при анализе: {ex.Message}");
             }
         }
-        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-        if (methods.Length > 0)
-        {
-            Console.WriteLine("  Методы:");
-            foreach (MethodInfo method in methods)
-            {
-                var parameters = method.GetParameters()
-                    .Select(p => $"{p.ParameterType.Name} {p.Name}");
-                Console.WriteLine($"    {method.ReturnType.Name} {method.Name}({string.Join(", ", parameters)})");
-            }
-        }
-        
-        Console.WriteLine();
     }
-}
-catch (BadImageFormatException)
-{
-    Console.WriteLine("Ошибка: Файл не является валидной .NET сборкой.");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Ошибка: {ex.Message}");
 }
