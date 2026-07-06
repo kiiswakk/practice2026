@@ -8,6 +8,7 @@ public class ClassAnalyzer
 
     public ClassAnalyzer(Type type)
     {
+        ArgumentNullException.ThrowIfNull(type);
         _type = type;
     }
 
@@ -19,6 +20,7 @@ public class ClassAnalyzer
     }
     public IEnumerable<string> GetMethodParams(string methodName)
     {
+        ArgumentNullException.ThrowIfNull(methodName);
         var method = _type.GetMethod(methodName);
         if (method == null)
         {
