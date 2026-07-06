@@ -6,7 +6,6 @@ namespace task03;
 public class CustomCollection<T> : IEnumerable<T>
 {
     private readonly List<T> _items = new();
-
     public void Add(T item)
     {
         ArgumentNullException.ThrowIfNull(item);
@@ -15,7 +14,7 @@ public class CustomCollection<T> : IEnumerable<T>
     public bool Delete(T item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        _items.Remove(item);
+        return _items.Remove(item);
     } 
     public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
