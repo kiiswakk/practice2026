@@ -37,4 +37,20 @@ public class SpaceshipTests
         var cruiser = new Cruiser();
         Assert.True(fighter.FirePower < cruiser.FirePower);
     }
+        [Fact]
+    public void Fighter_FunctionalCheck()
+    {
+        var fighter = new Fighter();
+        fighter.MoveForward();
+        fighter.Rotate(180);
+        fighter.Fire();
+    }
+    [Fact]
+    public void Cruiser_FunctionalCheck()
+    {
+        var cruiser = new Cruiser();
+        cruiser.MoveForward();
+        cruiser.Rotate(180);
+        cruiser.Fire();
+    }
 }

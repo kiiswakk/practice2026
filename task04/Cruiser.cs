@@ -6,14 +6,14 @@ public class Cruiser: ISpaceship
     public int Speed => 50;
     public void MoveForward()
     {
-        Console.WriteLine("Cruiser поплыл вперед");
+        OnActionExecuted?.Invoke("Cruiser поплыл вперед");
     }
     public void Rotate(int angle)
     {
-        Console.WriteLine($"Cruiser повернул на {angle} градусов");
+        OnActionExecuted?.Invoke($"Cruiser повернул на {angle} градусов");
     }
     public void Fire()
     {
-        Console.WriteLine("Cruiser выстрелил ракетой");
+        OnActionExecuted?.Invoke("Cruiser выстрелил ракетой");
     }
 }
