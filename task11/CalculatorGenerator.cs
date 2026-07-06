@@ -30,11 +30,15 @@ public static class Calculator
 
         using MemoryStream stream = new();
 
-        EmitResult result = compiler.Emit(stream);
+       EmitResult result = compiler.Emit(stream);
 
         if (!result.Success)
         {
-            throw new InvalidOperationException("Ошибка компиляции");
+            var errors = result.Diagnostics
+                .Where(d => d.Severity == DiagnosticSeverity.Error)
+                .Select(d => d.ToString());
+
+            throw new InvalidOperationException("Ошибка компиляции:\n" + string.Join(Environment.NewLine, errors));
         }
 
         stream.Position = 0;

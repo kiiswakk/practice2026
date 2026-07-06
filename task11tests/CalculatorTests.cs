@@ -38,4 +38,26 @@ public class CalculatorTests
     {
         Assert.Equal(4, _calculator.Div(20, 5));
     }
+
+    [Fact]
+    public void EmptyCode_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            Calculator.CreateCalculator(""));
+    }
+    [Fact]
+    public void InvalidCode_ThrowsCompilationError()
+    {
+        string code = @"
+            public class Calculator
+            {
+                public int Add(int a, int b)
+                {
+                    return a +;
+                }
+            }";
+
+        var ex = Assert.Throws<InvalidOperationException>(() => Calculator.CreateCalculator(code));
+        Assert.Contains("Ошибка компиляции", ex.Message);
+    }
 }
