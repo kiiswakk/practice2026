@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="CommandLib/CommandLib.csproj" />
+  <Project Path="PluginLoader/PluginLoader.csproj" />
+  <Project Path="PluginLoaderTests/PluginLoaderTests.csproj" />
+  <Project Path="Plugins/Plugins.csproj" />
+</Solution>
+
+
+
