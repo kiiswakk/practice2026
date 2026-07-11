@@ -1,22 +1,27 @@
 ﻿using System;
 using System.Threading;
+
 namespace task14;
+
 public class DefiniteIntegral
 {
     public static double Solve(double a, double b, Func<double, double> function, double step, int threadsnumber)
     {
         if (function == null)
             throw new ArgumentNullException(nameof(function), "Функция не может быть null.");
+
         if (threadsnumber <= 0)
             throw new ArgumentException("Количество потоков должно быть больше нуля.", nameof(threadsnumber));
+
         if (step <= 0)
             throw new ArgumentException("Шаг интегрирования должен быть положительным.", nameof(step));
 
-        double totalResult = 0.0;
-
         int totalSteps = (int)Math.Floor((b - a) / step);
+
         if (totalSteps <= 0)
             return 0.0;
+
+        double[] results = new double[threadsnumber];
 
         int baseSteps = totalSteps / threadsnumber;
         int remainder = totalSteps % threadsnumber;
@@ -25,7 +30,7 @@ public class DefiniteIntegral
 
         for (int i = 0; i < threadsnumber; i++)
         {
-            int threadIndex = i; 
+            int threadIndex = i;
 
             Thread thread = new Thread(() =>
             {
@@ -48,30 +53,20 @@ public class DefiniteIntegral
                     localSum += function(a + j * step);
                 }
 
-                double localIntegralResult = localSum * step;
-    
-                SafeAdd(ref totalResult, localIntegralResult);
+                results[threadIndex] = localSum * step;
 
                 barrier.SignalAndWait();
             });
 
             thread.Start();
         }
-
         barrier.SignalAndWait();
+        double totalResult = 0;
+        for (int i = 0; i < threadsnumber; i++)
+        {
+            totalResult += results[i];
+        }
 
         return totalResult;
-    }
-
-    private static void SafeAdd(ref double location, double value)
-    {
-        double initial;
-        double newValue;
-        do
-        {
-            initial = location;
-            newValue = initial + value;
-        }
-        while (initial != Interlocked.CompareExchange(ref location, newValue, initial));
     }
 }
