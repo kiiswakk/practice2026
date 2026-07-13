@@ -69,4 +69,26 @@ public class DefiniteIntegral
 
         return totalResult;
     }
+
+    public static double SolveSingleThread(double a, double b, Func<double, double> function, double step)
+    {
+        if (function == null)
+            throw new ArgumentNullException(nameof(function), "Функция не может быть null.");
+        if (step <= 0)
+            throw new ArgumentException("Шаг интегрирования должен быть положительным.", nameof(step));
+
+        int totalSteps = (int)Math.Floor((b - a) / step);
+
+        if (totalSteps <= 0)
+            return 0.0;
+
+        double sum = (function(a) + function(b)) / 2.0;
+
+        for (int i = 1; i < totalSteps; i++)
+        {
+            sum += function(a + i * step);
+        }
+
+        return sum * step;
+    }
 }
