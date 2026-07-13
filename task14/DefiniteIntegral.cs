@@ -90,10 +90,5 @@ public class DefiniteIntegral
         }
 
         return sum * step;
-        {
-            totalResult += results[i];
-        }
-
-        return totalResult;
     }
 }
