@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading;
+
 namespace task14;
+
 public class DefiniteIntegral
 {
     public static double Solve(double a, double b, Func<double, double> function, double step, int threadsnumber)
@@ -88,5 +90,10 @@ public class DefiniteIntegral
         }
 
         return sum * step;
+        {
+            totalResult += results[i];
+        }
+
+        return totalResult;
     }
 }

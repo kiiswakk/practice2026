@@ -23,7 +23,7 @@ public class DefiniteIntegralTests
     [Fact]
     public void Test_LinearPositive()
     {
-        Assert.Equal(10, DefiniteIntegral.Solve(0, 5, X, 1e-6, 8), 1e-5);
+        Assert.Equal(12.5, DefiniteIntegral.Solve(0, 5, X, 1e-6, 8), 1e-5);
     }
     [Fact]
     public void Test_ConstantFunction()
