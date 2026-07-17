@@ -7,6 +7,7 @@ namespace task17
     public class ServerThread
     {
         private readonly BlockingCollection<ICommand> _queue = new BlockingCollection<ICommand>();
+        private readonly IScheduler _scheduler;
         private readonly Thread _thread;
         private Action _behavior;
         private volatile bool _stop = false;
@@ -14,8 +15,13 @@ namespace task17
 
         public Thread Thread => _thread;
 
-        public ServerThread()
+        public ServerThread() : this(new RoundRobinScheduler())
         {
+        }
+
+        public ServerThread(IScheduler scheduler)
+        {
+            _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             _behavior = DefaultBehavior;
             _thread = new Thread(Run);
         }
@@ -45,13 +51,13 @@ namespace task17
             }
         }
 
-        internal void HardStop()
+        public void HardStop()
         {
             _stop = true;
             CompleteAddingOnce();
         }
 
-        internal void SoftStop()
+        public void SoftStop()
         {
             CompleteAddingOnce();
 
@@ -69,32 +75,56 @@ namespace task17
 
         private void DefaultBehavior()
         {
+            if (_scheduler.HasCommand())
+            {
+                RunStep(_scheduler.Select());
+
+                while (_queue.TryTake(out var incoming))
+                {
+                    RunStep(incoming);
+                }
+
+                return;
+            }
+
             try
             {
                 ICommand command = _queue.Take();
-                try
-                {
-                    command.Execute();
-                }
-                catch (Exception ex)
-                {
-                    ExceptionHandler.Handle(command, ex);
-                }
+                RunStep(command);
             }
             catch (InvalidOperationException)
             {
                 _stop = true;
             }
         }
+
         private void SoftStopBehavior()
         {
-            if (_queue.IsCompleted)
+            if (!_scheduler.HasCommand() && _queue.IsCompleted)
             {
                 _stop = true;
                 return;
             }
 
             DefaultBehavior();
+        }
+
+        private void RunStep(ICommand command)
+        {
+            try
+            {
+                command.Execute();
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle(command, ex);
+                return;
+            }
+
+            if (command is ILongCommand longCommand && !longCommand.IsCompleted)
+            {
+                _scheduler.Add(command);
+            }
         }
 
         private void Run()
