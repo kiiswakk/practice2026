@@ -75,21 +75,20 @@ namespace task17
 
         private void DefaultBehavior()
         {
+            while (_queue.TryTake(out var incoming))
+            {
+                _scheduler.Add(incoming);
+            }
+
             if (_scheduler.HasCommand())
             {
                 RunStep(_scheduler.Select());
-
-                while (_queue.TryTake(out var incoming))
-                {
-                    RunStep(incoming);
-                }
-
                 return;
             }
 
             try
             {
-                ICommand command = _queue.Take();
+                var command = _queue.Take();
                 RunStep(command);
             }
             catch (InvalidOperationException)
